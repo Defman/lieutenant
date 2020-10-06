@@ -243,7 +243,7 @@ enum Parser {
     Vec3,
 }
 
-fn parser(parser: Parser) -> ParserKind {
+fn _parser(parser: Parser) -> ParserKind {
     match parser {
         Parser::Bool => ParserKind::Bool,
         Parser::Float(range) => {

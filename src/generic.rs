@@ -3,8 +3,8 @@ pub struct Product<H, T: HList>(pub(crate) H, pub(crate) T);
 
 #[derive(Debug)]
 pub enum Either<T, U> {
-    A(T),
-    B(U),
+    _A(T),
+    _B(U),
 }
 
 impl<T, U, Args> Func<Args> for Either<(T,), (U,)>
@@ -16,8 +16,8 @@ where
 
     fn call(&self, args: Args) -> Self::Output {
         match self {
-            Either::A((a,)) => a.call(args),
-            Either::B((b,)) => b.call(args),
+            Either::_A((a,)) => a.call(args),
+            Either::_B((b,)) => b.call(args),
         }
     }
 }
@@ -31,8 +31,8 @@ where
 
     fn call(self, args: Args) -> Self::Output {
         match self {
-            Either::A((a,)) => a.call(args),
-            Either::B((b,)) => b.call(args),
+            Either::_A((a,)) => a.call(args),
+            Either::_B((b,)) => b.call(args),
         }
     }
 }

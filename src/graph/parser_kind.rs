@@ -1,4 +1,4 @@
-use crate::automaton::NFA;
+use crate::automaton::{NFA};
 use crate::error::Result;
 use crate::values::Value;
 use std::ops::RangeInclusive;
@@ -102,6 +102,7 @@ impl<'a> From<&'a ParserKind> for NFA {
         //     // ParserKind::String(StringProperty::GreedyPhrase) => Pattern::concat(&[Pattern::WORD, Pattern::SPACE]).repeat(),
         //     _ => todo!(),
         // }
+            
         todo!()
     }
 }

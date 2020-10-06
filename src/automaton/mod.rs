@@ -48,15 +48,8 @@ impl ByteClass {
         ByteClass(vec![1; 256])
     }
 
-    pub(crate) fn ones_except_last_byte() -> Self {
-        let mut v = vec![0; 256];
-        for i in 128..=255u8 {
-            v[i as usize] = 1;
-        }
-
-        ByteClass(v)
-    }
 }
+
 
 impl From<u8> for ByteClass {
     fn from(value: u8) -> Self {
