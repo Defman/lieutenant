@@ -1,6 +1,6 @@
-use std::{fmt, marker::PhantomData, str::FromStr, todo};
+use std::{fmt, marker::PhantomData, str::FromStr};
 
-use anyhow::{anyhow, bail};
+use anyhow::anyhow;
 
 use crate::{regex_validator, AddToDispatcher, Dispatcher, Node, NodeId, Validator};
 
@@ -26,23 +26,36 @@ where
     type Extract = (A,);
 
     #[inline]
-    fn parse(&self, input: &mut &str) -> Result<Self::Extract> {
-        let arg = A::from_str(&input).map_err(|_| anyhow!("could not parse argument"))?;
+    fn parse<'a, 'b>(&self, input: &'a str) -> Result<(Self::Extract, &'b str)>
+    where
+        'a: 'b,
+    {
+        let mut arg = input;
 
-        if input.is_empty() {
-            bail!("input is empty!");
-        }
+        let input = if let Some((i, _)) = input.char_indices().find(|(_, c)| c.is_whitespace()) {
+            arg = &input[..i];
+            &input[i..]
+        } else {
+            input
+        };
 
-        Ok((arg,))
+        let arg = A::from_str(&arg).map_err(|_| anyhow!("could not parse argument"))?;
+        Ok(((arg,), input))
     }
 }
 
-pub fn argument<A>() -> Argument<A>
-where
-    A: FromStr,
-{
+pub fn argument<A>() -> Argument<A> {
     Argument {
         argument: Default::default(),
+    }
+}
+
+impl<T: 'static> AddToDispatcher for Argument<T>
+where
+    Argument<T>: Validator,
+{
+    fn add_to_dispatcher(&self, parent: Option<NodeId>, dispatcher: &mut Dispatcher) -> NodeId {
+        dispatcher.add(parent, Node::new(self.clone()))
     }
 }
 
@@ -69,24 +82,4 @@ macro_rules! integer {
     };
 }
 
-integer![
-    u8,
-    i8,
-    u16,
-    i16,
-    u32,
-    i32,
-    u64,
-    i64,
-    u128,
-    i128,
-];
-
-impl<T: 'static> AddToDispatcher for Argument<T>
-where
-    Argument<T>: Validator,
-{
-    fn add_to_dispatcher(&self, parent: Option<NodeId>, dispatcher: &mut Dispatcher) -> NodeId {
-        dispatcher.add(parent, Node::new(self.clone()))
-    }
-}
+integer![u8, i8, u16, i16, u32, i32, u64, i64, u128, i128,];

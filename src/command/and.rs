@@ -1,5 +1,10 @@
+use anyhow::bail;
+
 use super::{Parser, Result};
-use crate::{AddToDispatcher, Dispatcher, Node, NodeId, generic::{Tuple, Combine, CombinedTuples}};
+use crate::{
+    generic::{Combine, CombinedTuples, Tuple},
+    AddToDispatcher, Dispatcher, NodeId,
+};
 
 use std::fmt;
 
@@ -17,11 +22,22 @@ where
     type Extract = CombinedTuples<A::Extract, B::Extract>;
 
     #[inline]
-    fn parse(&self, input: &mut &str) -> Result<Self::Extract> {
-        let a = self.a.parse(input)?;
-        let b = self.b.parse(input)?;
+    fn parse<'a, 'b>(&self, input: &'a str) -> Result<(Self::Extract, &'b str)>
+    where
+        'a: 'b,
+    {
+        let (a, input) = self.a.parse(input)?;
 
-        Ok(a.combine(b))
+        // Removes at least one space.
+        let prev_len = input.len();
+        let input = input.trim_start();
+        if input.len() == prev_len {
+            bail!("Filed in midle of And.")
+        }
+
+        let (b, input) = self.b.parse(input)?;
+
+        Ok((a.combine(b), input))
     }
 }
 
@@ -32,6 +48,7 @@ where
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.a.fmt(f)?;
+        write!(f, " ")?;
         self.b.fmt(f)?;
         Ok(())
     }
@@ -45,5 +62,71 @@ where
     fn add_to_dispatcher(&self, parent: Option<NodeId>, dispatcher: &mut Dispatcher) -> NodeId {
         let parent = self.a.add_to_dispatcher(parent, dispatcher);
         self.b.add_to_dispatcher(Some(parent), dispatcher)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::command::Literal;
+
+    use super::*;
+
+    #[test]
+    fn simple() {
+        let lit1 = Literal {
+            value: String::from("tp"),
+        };
+
+        let lit2 = Literal {
+            value: String::from("tp"),
+        };
+
+        let x = And { a: lit1, b: lit2 };
+
+        let input = "tp tp a";
+
+        if let Ok((_, output)) = x.parse(input) {
+            assert_eq!(output.trim_start(), "a");
+        } else {
+            assert!(false)
+        }
+    }
+
+    #[test]
+    fn simple2() {
+        let lit1 = Literal {
+            value: String::from("tp"),
+        };
+
+        let lit2 = Literal {
+            value: String::from("tp"),
+        };
+
+        let x = And { a: lit1, b: lit2 };
+
+        let input = &mut "tp tp";
+
+        if let Ok((_, output)) = x.parse(input) {
+            assert_eq!(output.trim_start(), "");
+        } else {
+            assert!(false)
+        }
+    }
+
+    #[test]
+    fn simple3() {
+        let lit1 = Literal {
+            value: String::from("tp"),
+        };
+
+        let lit2 = Literal {
+            value: String::from("tp"),
+        };
+
+        let x = And { a: lit1, b: lit2 };
+
+        let input = &mut "tptp";
+
+        assert!(x.parse(input).is_err());
     }
 }
